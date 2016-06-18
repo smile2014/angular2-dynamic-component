@@ -104,7 +104,7 @@ export interface IButton {
 }
 ```
 
-**GreenButton.ts*
+**GreenButton.ts**
 ```typescript
 import {Component} from '@angular/core';
 
@@ -135,6 +135,8 @@ export class RedButton implements IButton {
     buttonName:string;
 }
 ```
+
+![Preview](demo/preview.png)
 
 ## License
 
