@@ -1,4 +1,7 @@
-import {Component} from '@angular/core';
+import {
+    Component,
+    Input
+} from '@angular/core';
 
 import {IButton} from './IButton';
 
@@ -8,5 +11,5 @@ import {IButton} from './IButton';
 })
 export class GreenButton implements IButton {
 
-    buttonName:string;
+    @Input() public buttonName:string;
 }
