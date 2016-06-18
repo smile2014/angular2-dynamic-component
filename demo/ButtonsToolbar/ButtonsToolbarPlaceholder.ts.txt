@@ -1,0 +1,38 @@
+import {
+    Component,
+    Input,
+    ComponentResolver,
+    ViewContainerRef,
+    ElementRef
+} from '@angular/core';
+
+import {Reflector} from '@angular/core/src/reflection/reflection';
+
+import {DynamicComponentFactory, DynamicComponent} from 'angular2-dynamic-component';
+
+import {IButton} from './IButton';
+import {ButtonType} from './ButtonsToolbar';
+
+class ButtonsToolbarComponent extends DynamicComponent {
+
+    constructor(public selector:string = 'ButtonsToolbarPlaceholder') {
+        super();
+    }
+}
+
+@Component(new ButtonsToolbarComponent())
+export class ButtonsToolbarPlaceholder extends DynamicComponentFactory<IButton> {
+
+    @Input() inputData:ButtonType;
+
+    constructor(protected element:ElementRef,
+                protected viewContainer:ViewContainerRef,
+                protected componentResolver:ComponentResolver,
+                protected reflector:Reflector) {
+        super(element, viewContainer, componentResolver, reflector);
+    }
+
+    public getDynamicComponentType():{new ():IButton} {
+        return this.inputData.type;
+    }
+}

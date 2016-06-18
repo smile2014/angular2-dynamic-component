@@ -1,0 +1,31 @@
+import {Component} from '@angular/core';
+import {GreenButton} from './GreenButton';
+import {RedButton} from './RedButton';
+import {IButton} from './IButton';
+import {ButtonsToolbarPlaceholder} from './ButtonsToolbarPlaceholder';
+
+export interface ButtonType {
+    name:string;
+    type:{new ():IButton};
+}
+
+@Component({
+    selector: 'ButtonsToolbar',
+    template: require('./ButtonsToolbar.html'),
+    directives: [
+        ButtonsToolbarPlaceholder
+    ],
+})
+export class ButtonsToolbar {
+
+    buttons:Array<ButtonType> = [
+        {
+            name: 'GreenButtonName',
+            type: GreenButton
+        },
+        {
+            name: 'RedButtonName',
+            type: RedButton
+        }
+    ];
+}

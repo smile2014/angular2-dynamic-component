@@ -1,0 +1,6 @@
+import {ButtonType} from './ButtonsToolbar';
+
+export interface IButton {
+
+    inputData?:ButtonType;
+}
