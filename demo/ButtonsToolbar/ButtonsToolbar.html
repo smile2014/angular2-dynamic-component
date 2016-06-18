@@ -1,4 +1,4 @@
 <template ngFor let-button [ngForOf]="buttons">
-  <ButtonsToolbarPlaceholder [inputData]="button">
+  <ButtonsToolbarPlaceholder [componentType]="button.type" [buttonName]="button.name">
   </ButtonsToolbarPlaceholder>
 </template>

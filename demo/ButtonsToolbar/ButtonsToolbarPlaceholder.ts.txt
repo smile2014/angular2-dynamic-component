@@ -21,18 +21,15 @@ class ButtonsToolbarComponent extends DynamicComponent {
 }
 
 @Component(new ButtonsToolbarComponent())
-export class ButtonsToolbarPlaceholder extends DynamicComponentFactory<IButton> {
+export class ButtonsToolbarPlaceholder extends DynamicComponentFactory<IButton> implements IButton {
 
-    @Input() inputData:ButtonType;
+    @Input() buttonName:string;
+    @Input() componentType:{new ():IButton};
 
     constructor(protected element:ElementRef,
                 protected viewContainer:ViewContainerRef,
                 protected componentResolver:ComponentResolver,
                 protected reflector:Reflector) {
         super(element, viewContainer, componentResolver, reflector);
-    }
-
-    public getDynamicComponentType():{new ():IButton} {
-        return this.inputData.type;
     }
 }

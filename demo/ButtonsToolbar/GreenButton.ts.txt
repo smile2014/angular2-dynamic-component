@@ -4,7 +4,9 @@ import {IButton} from './IButton';
 
 @Component({
     selector: 'GreenButton',
-    template: '<span style="color: green; width: 50px; border: 1px solid black; padding: 6px; margin: 6px;">The first button with name: {{ inputData.name }}</span>',
+    template: '<span style="color: green; width: 50px; border: 1px solid black; padding: 6px; margin: 6px;">The first button with name: {{ buttonName }}</span>',
 })
 export class GreenButton implements IButton {
+
+    buttonName:string;
 }
