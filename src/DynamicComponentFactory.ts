@@ -1,5 +1,6 @@
 import {
     Component,
+    Input,
     ComponentFactory,
     ComponentResolver,
     ElementRef,
@@ -14,9 +15,13 @@ import {BrowserDomAdapter}  from '@angular/platform-browser/src/browser/browser_
 
 export class DynamicComponent {
     template:string = '';
+    selector:string = 'DynamicComponent'
 }
 
-export abstract class DynamicComponentFactory<C> implements OnInit {
+@Component(new DynamicComponent())
+export class DynamicComponentFactory<C> implements OnInit {
+
+    @Input() componentType:{new ():C};
 
     constructor(protected element:ElementRef,
                 protected viewContainer:ViewContainerRef,
@@ -25,7 +30,7 @@ export abstract class DynamicComponentFactory<C> implements OnInit {
     }
 
     public ngOnInit() {
-        this.componentResolver.resolveComponent(this.getDynamicComponentType())
+        this.componentResolver.resolveComponent(this.componentType)
             .then((componentFactory:ComponentFactory<C>) => {
 
                 this.applyPropertiesToDynamicComponent(
@@ -60,6 +65,4 @@ export abstract class DynamicComponentFactory<C> implements OnInit {
             }
         }
     }
-
-    abstract getDynamicComponentType():{new ():C};
 }
