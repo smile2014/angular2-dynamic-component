@@ -1,1 +1,1 @@
-export {DynamicComponentFactory} from './DynamicComponentFactory';
+export {DynamicComponentFactory, DynamicComponent} from './DynamicComponentFactory';
