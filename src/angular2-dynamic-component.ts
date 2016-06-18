@@ -1,0 +1,1 @@
+export {DynamicComponentFactory} from './DynamicComponentFactory';
