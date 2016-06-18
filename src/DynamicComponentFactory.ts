@@ -8,6 +8,12 @@ import {
     ViewContainerRef
 } from '@angular/core';
 
+import {
+    Type,
+    isPresent,
+    isArray
+} from '@angular/core/src/facade/lang';
+
 import {InputMetadata} from '@angular/core/src/metadata/directives';
 import {Reflector} from '@angular/core/src/reflection/reflection';
 
@@ -43,26 +49,31 @@ export class DynamicComponentFactory<C> implements OnInit {
     }
 
     private applyPropertiesToDynamicComponent(instance:C) {
-        this.processDecoratedInputFields((copiedProperties:string) => {
-            instance[copiedProperties] = this[copiedProperties];
-        });
-    }
-
-    private processDecoratedInputFields(callback:Function) {
-        const metaData = this.reflector.propMetadata(this.constructor);
+        const placeholderComponentMetaData:{[key: string]: Type[];} = this.reflector.propMetadata(this.constructor),
+            dynamicComponentMetaData:{[key: string]: Type[];} = this.reflector.propMetadata(instance.constructor);
 
         for (let prop of Object.keys(this)) {
-            const metaDataByProp:Array<any> = metaData[prop];
+            if (this.hasInputMetadataAnnotation(placeholderComponentMetaData[prop])
+                && this.hasInputMetadataAnnotation(dynamicComponentMetaData[prop])) {
 
-            if (!Array.isArray(metaDataByProp)) {
-                continue;
-            }
-
-            for (let decorator of metaDataByProp) {
-                if (decorator instanceof InputMetadata) {
-                    callback(prop);
+                if (isPresent(instance[prop])) {
+                    console.warn('[$DynamicComponentFactory] The property', prop, 'will be overwritten for the component', instance);
                 }
+                instance[prop] = this[prop];
             }
         }
+    }
+
+    private hasInputMetadataAnnotation(metaDataByProperty:Array<Type>):boolean {
+        if (!isArray(metaDataByProperty)) {
+            return false;
+        }
+
+        for (let decorator of metaDataByProperty) {
+            if (decorator instanceof InputMetadata) {
+                return true;
+            }
+        }
+        return false;
     }
 }
