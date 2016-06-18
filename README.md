@@ -106,7 +106,10 @@ export interface IButton {
 
 **GreenButton.ts**
 ```typescript
-import {Component} from '@angular/core';
+import {
+    Component,
+    Input
+} from '@angular/core';
 
 import {IButton} from './IButton';
 
@@ -116,13 +119,16 @@ import {IButton} from './IButton';
 })
 export class GreenButton implements IButton {
 
-    buttonName:string;
+    @Input() public buttonName:string;
 }
 ```
 
 **RedButton.ts**
 ```typescript
-import {Component} from '@angular/core';
+import {
+    Component,
+    Input
+} from '@angular/core';
 
 import {IButton} from './IButton';
 
@@ -132,7 +138,7 @@ import {IButton} from './IButton';
 })
 export class RedButton implements IButton {
 
-    buttonName:string;
+    @Input() public buttonName:string;
 }
 ```
 
