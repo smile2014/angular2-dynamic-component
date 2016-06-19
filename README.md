@@ -1,6 +1,6 @@
 # angular2-dynamic-component
 
-A static placeholder for the dynamic component at Angular2.
+The implementation of dynamic component wrapper at Angular2.
 
 ## Installation
 
