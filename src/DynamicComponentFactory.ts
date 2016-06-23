@@ -25,9 +25,9 @@ export class DynamicComponent {
 }
 
 @Component(new DynamicComponent())
-export class DynamicComponentFactory<C> implements OnInit {
+export class DynamicComponentFactory<TDynamicComponentType> implements OnInit {
 
-    @Input() componentType:{new ():C};
+    @Input() componentType:{new ():TDynamicComponentType};
 
     constructor(protected element:ElementRef,
                 protected viewContainer:ViewContainerRef,
@@ -37,10 +37,10 @@ export class DynamicComponentFactory<C> implements OnInit {
 
     public ngOnInit() {
         this.componentResolver.resolveComponent(this.componentType)
-            .then((componentFactory:ComponentFactory<C>) => {
+            .then((componentFactory:ComponentFactory<TDynamicComponentType>) => {
 
                 this.applyPropertiesToDynamicComponent(
-                    this.viewContainer.createComponent<C>(componentFactory).instance
+                    this.viewContainer.createComponent<TDynamicComponentType>(componentFactory).instance
                 );
 
                 // Remove wrapper after render the component
@@ -48,7 +48,7 @@ export class DynamicComponentFactory<C> implements OnInit {
             });
     }
 
-    private applyPropertiesToDynamicComponent(instance:C) {
+    private applyPropertiesToDynamicComponent(instance:TDynamicComponentType) {
         const placeholderComponentMetaData:{[key: string]: Type[];} = this.reflector.propMetadata(this.constructor),
             dynamicComponentMetaData:{[key: string]: Type[];} = this.reflector.propMetadata(instance.constructor);
 
@@ -65,15 +65,6 @@ export class DynamicComponentFactory<C> implements OnInit {
     }
 
     private hasInputMetadataAnnotation(metaDataByProperty:Array<Type>):boolean {
-        if (!isArray(metaDataByProperty)) {
-            return false;
-        }
-
-        for (let decorator of metaDataByProperty) {
-            if (decorator instanceof InputMetadata) {
-                return true;
-            }
-        }
-        return false;
+        return isArray(metaDataByProperty) && !!metaDataByProperty.find((decorator:Type) => decorator instanceof InputMetadata);
     }
 }
