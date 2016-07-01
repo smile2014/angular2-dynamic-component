@@ -36,7 +36,7 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnInit {
     }
 
     public ngOnInit() {
-        this.componentResolver.resolveComponent(this.componentType as TDynamicComponentType)
+        this.componentResolver.resolveComponent(this.componentType)
             .then((componentFactory:ComponentFactory<TDynamicComponentType>) => {
 
                 this.applyPropertiesToDynamicComponent(
