@@ -1,0 +1,13 @@
+.idea
+.git
+.npmignore
+
+demo
+typings
+node_modules
+
+*.log
+*.tgz
+
+src/*.js
+src/*.js.map

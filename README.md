@@ -145,6 +145,12 @@ export class RedButton implements IButton {
 **Preview**
 ![Preview](demo/preview.png)
 
+## Publish
+
+```sh
+npm install & tsc & npm publish ./
+```
+
 ## License
 
 Licensed under MIT.
