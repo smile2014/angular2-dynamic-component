@@ -4,13 +4,14 @@ import {
     ComponentFactory,
     ComponentResolver,
     ElementRef,
-    OnInit,
+    OnChanges,
     ViewContainerRef
 } from '@angular/core';
 
 import {
     Type,
     isPresent,
+    isBlank,
     isArray
 } from '@angular/core/src/facade/lang';
 
@@ -20,14 +21,15 @@ import {Reflector} from '@angular/core/src/reflection/reflection';
 import {BrowserDomAdapter}  from '@angular/platform-browser/src/browser/browser_adapter';
 
 export class DynamicComponent {
-    template:string = '';
-    selector:string = 'DynamicComponent'
+    constructor(public selector:string = 'DynamicComponent', public template:string = '') {
+    }
 }
 
 @Component(new DynamicComponent())
-export class DynamicComponentFactory<TDynamicComponentType> implements OnInit {
+export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges {
 
     @Input() componentType:{new ():TDynamicComponentType};
+    @Input() componentTemplate:string;
 
     constructor(protected element:ElementRef,
                 protected viewContainer:ViewContainerRef,
@@ -35,8 +37,22 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnInit {
                 protected reflector:Reflector) {
     }
 
-    public ngOnInit() {
-        this.componentResolver.resolveComponent(this.componentType)
+    /**
+     * @override
+     */
+    public ngOnChanges() {
+        let componentType:Type = this.componentType;
+
+        const componentTemplate:string = this.componentTemplate;
+
+        if (!isBlank(componentTemplate)) {
+            @Component(new DynamicComponent(null, componentTemplate))
+            class TempComponent {
+            }
+            componentType = TempComponent;
+        }
+
+        this.componentResolver.resolveComponent(componentType)
             .then((componentFactory:ComponentFactory<TDynamicComponentType>) => {
 
                 this.applyPropertiesToDynamicComponent(
