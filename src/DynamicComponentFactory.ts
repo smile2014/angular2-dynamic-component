@@ -12,7 +12,8 @@ import {
     Type,
     isPresent,
     isBlank,
-    isArray
+    isArray,
+    noop
 } from '@angular/core/src/facade/lang';
 
 import {InputMetadata} from '@angular/core/src/metadata/directives';
@@ -20,15 +21,22 @@ import {Reflector} from '@angular/core/src/reflection/reflection';
 
 import {BrowserDomAdapter}  from '@angular/platform-browser/src/browser/browser_adapter';
 
-export class DynamicComponent {
+export class DynamicComponent implements IComponentMetadata {
     constructor(public selector:string = 'DynamicComponent', public template:string = '') {
     }
+}
+
+export interface IComponentMetadata {
+    template:string;
+    selector:string;
+    pipes?:Array<Type | any[]>;
 }
 
 @Component(new DynamicComponent())
 export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges {
 
     @Input() componentType:{new ():TDynamicComponentType};
+    @Input() componentMetaData:IComponentMetadata;
     @Input() componentTemplate:string;
 
     constructor(protected element:ElementRef,
@@ -41,15 +49,17 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
      * @override
      */
     public ngOnChanges() {
-        let componentType:Type = this.componentType;
+        let componentType:Type;
 
         const componentTemplate:string = this.componentTemplate;
+        const componentMetaData:IComponentMetadata = this.componentMetaData;
 
-        if (!isBlank(componentTemplate)) {
-            @Component(new DynamicComponent(null, componentTemplate))
-            class TempComponent {
-            }
-            componentType = TempComponent;
+        if (!isBlank(componentMetaData)) {
+            componentType = Component(componentMetaData)(noop);
+        } else if (!isBlank(componentTemplate)) {
+            componentType = Component({template: componentTemplate})(noop);
+        } else {
+            componentType = this.componentType;
         }
 
         this.componentResolver.resolveComponent(componentType)
@@ -65,8 +75,8 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
     }
 
     private applyPropertiesToDynamicComponent(instance:TDynamicComponentType) {
-        const placeholderComponentMetaData:{[key: string]: Type[];} = this.reflector.propMetadata(this.constructor),
-            dynamicComponentMetaData:{[key: string]: Type[];} = this.reflector.propMetadata(instance.constructor);
+        const placeholderComponentMetaData:{[key:string]:Type[];} = this.reflector.propMetadata(this.constructor),
+            dynamicComponentMetaData:{[key:string]:Type[];} = this.reflector.propMetadata(instance.constructor);
 
         for (let prop of Object.keys(this)) {
             if (this.hasInputMetadataAnnotation(placeholderComponentMetaData[prop])
