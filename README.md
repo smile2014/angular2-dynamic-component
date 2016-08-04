@@ -148,7 +148,7 @@ export class RedButton implements IButton {
 ## Publish
 
 ```sh
-npm install & tsc & npm publish ./
+npm run deploy
 ```
 
 ## License
