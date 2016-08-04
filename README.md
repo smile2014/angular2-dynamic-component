@@ -9,7 +9,7 @@ First you need to install the npm module:
 npm install angular2-dynamic-component --save
 ```
 
-## Use
+## Use case #1
 
 **ButtonsToolbar.html**
 ```html
@@ -144,6 +144,64 @@ export class RedButton implements IButton {
 
 **Preview**
 ![Preview](demo/preview.png)
+
+## Use case #2
+
+**Template**
+```html
+...
+<td *ngFor="let column of columns">
+    <DynamicComponent [componentTemplate]="column.getColumnTemplate()">
+    </DynamicComponent>
+</td>
+...
+```
+
+**App.ts**
+```typescript
+@Component({
+    ...
+    directives: [DynamicComponentFactory]
+    ...
+})
+class App {
+...
+}
+```
+
+**DynamicColumn.ts**
+```typescript
+export class DynamicColumn extends Column {
+    ...
+    public getColumnTemplate():string {
+        return '<input type="text" style="color: green; width: 100px;" [(ngModel)]="model" (ngModelChange)="onChange($event)"/>';
+    }
+}
+```
+
+## Use case #3
+
+**Template**
+```html
+...
+<td *ngFor="let column of columns">
+    <DynamicComponent [componentMetaData]="column.getColumnMetaData()">
+    </DynamicComponent>
+</td>
+...
+```
+
+**DynamicColumn.ts**
+```typescript
+export class DynamicColumn extends Column {
+    ...
+    public getColumnMetaData():IComponentMetadata {
+        return {
+           ...
+        };
+    }
+}
+```
 
 ## Publish
 
