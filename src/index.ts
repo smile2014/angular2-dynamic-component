@@ -1,2 +1,2 @@
 export {DynamicComponentFactory, DynamicComponent, IComponentMetadata} from './DynamicComponentFactory';
-export {IComponentRemoteTemplateFactory} from './IComponentTemplateRequestFactory';
+export {IComponentRemoteTemplateFactory} from './IComponentRemoteTemplateFactory';
