@@ -16,13 +16,24 @@ import {
     isArray
 } from '@angular/core/src/facade/lang';
 
+import {
+    Http,
+    Response,
+    RequestOptionsArgs
+} from '@angular/http';
+
+import {ObservableWrapper} from '@angular/common/src/facade/async';
+
 import {InputMetadata} from '@angular/core/src/metadata/directives';
 import {Reflector} from '@angular/core/src/reflection/reflection';
 
 import {BrowserDomAdapter}  from '@angular/platform-browser/src/browser/browser_adapter';
+import {IComponentRemoteTemplateFactory} from './IComponentRemoteTemplateFactory';
+
+const DYNAMIC_SELECTOR:string = 'DynamicComponent';
 
 export class DynamicComponent implements IComponentMetadata {
-    constructor(public selector:string = 'DynamicComponent', public template:string = '') {
+    constructor(public selector:string = DYNAMIC_SELECTOR, public template:string = '') {
     }
 }
 
@@ -38,6 +49,8 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
     @Input() componentType:{new ():TDynamicComponentType};
     @Input() componentMetaData:IComponentMetadata;
     @Input() componentTemplate:string;
+    @Input() componentTemplateUrl:string;
+    @Input() componentRemoteTemplateFactory:IComponentRemoteTemplateFactory;
 
     private componentInstance:ComponentRef<TDynamicComponentType>;
 
@@ -46,45 +59,72 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
     constructor(protected element:ElementRef,
                 protected viewContainer:ViewContainerRef,
                 protected componentResolver:ComponentResolver,
-                protected reflector:Reflector) {
+                protected reflector:Reflector,
+                protected http:Http) {
     }
 
     /**
      * @override
      */
     public ngOnChanges() {
-        let componentType:Type;
+        this.getComponentTypePromise().then((componentType:Type) => {
+            this.componentResolver.resolveComponent(componentType)
+                .then((componentFactory:ComponentFactory<TDynamicComponentType>) => {
+                    if (this.componentInstance) {
+                        this.componentInstance.destroy();
+                    }
+                    this.componentInstance = this.viewContainer.createComponent<TDynamicComponentType>(componentFactory);
 
-        const componentTemplate:string = this.componentTemplate;
-        const componentMetaData:IComponentMetadata = this.componentMetaData;
+                    this.applyPropertiesToDynamicComponent(this.componentInstance.instance);
 
-        if (!isBlank(componentMetaData)) {
-            componentType = Component(componentMetaData)(() => {
-            });
-        } else if (!isBlank(componentTemplate)) {
-            componentType = Component({template: componentTemplate})(() => {
-            });
-        } else {
-            componentType = this.componentType;
+                    // Remove wrapper after render the component
+                    if (this.destroyWrapper) {
+                        new BrowserDomAdapter().remove(this.element.nativeElement);
+                    }
+                });
+        });
+    }
+
+    protected getComponentTypePromise():Promise<Type> {
+        return new Promise((resolve:(value:Type) => void) => {
+            if (!isBlank(this.componentMetaData)) {
+                resolve(
+                    Component(this.componentMetaData)(() => {
+                    })
+                );
+            } else if (!isBlank(this.componentTemplate)) {
+                resolve(
+                    this.makeComponentClass(this.componentTemplate)
+                );
+            } else if (!isBlank(this.componentTemplateUrl)) {
+                this.loadRemoteTemplate(resolve);
+            } else {
+                resolve(this.componentType);
+            }
+        });
+    }
+
+    private loadRemoteTemplate(resolve:(value:Type) => void) {
+        let requestArgs:RequestOptionsArgs = {withCredentials: true};
+        if (!isBlank(this.componentRemoteTemplateFactory)) {
+            requestArgs = this.componentRemoteTemplateFactory.buildRequestOptions();
         }
 
-        this.componentResolver.resolveComponent(componentType)
-            .then((componentFactory:ComponentFactory<TDynamicComponentType>) => {
-
-                if (this.componentInstance) {
-                    this.componentInstance.destroy();
-                }
-                this.componentInstance = this.viewContainer.createComponent<TDynamicComponentType>(componentFactory);
-
-                this.applyPropertiesToDynamicComponent(
-                    this.componentInstance.instance
+        ObservableWrapper.toPromise(this.http.get(this.componentTemplateUrl, requestArgs))
+            .then((response:Response) => {
+                resolve(
+                    this.makeComponentClass(!isBlank(this.componentRemoteTemplateFactory)
+                        ? this.componentRemoteTemplateFactory.parseResponse(response)
+                        : response.text())
                 );
-
-                // Remove wrapper after render the component
-                if (this.destroyWrapper) {
-                    new BrowserDomAdapter().remove(this.element.nativeElement);
-                }
+            }, (reason:any) => {
+                resolve(reason);
             });
+    }
+
+    private makeComponentClass(template:string) {
+        return Component({selector: DYNAMIC_SELECTOR, template: template})(() => {
+        });
     }
 
     private applyPropertiesToDynamicComponent(instance:TDynamicComponentType) {

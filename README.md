@@ -145,7 +145,7 @@ export class RedButton implements IButton {
 **Preview**
 ![Preview](demo/preview.png)
 
-## Use case #2
+## Use case #2 **componentTemplate**
 
 **Template**
 ```html
@@ -179,7 +179,7 @@ export class DynamicColumn extends Column {
 }
 ```
 
-## Use case #3
+## Use case #3 **componentMetaData**
 
 **Template**
 ```html
@@ -201,6 +201,14 @@ export class DynamicColumn extends Column {
         };
     }
 }
+```
+
+## Use case #4 **componentTemplateUrl**
+
+**Template**
+```html
+<DynamicComponent [componentTemplateUrl]="http://www.yandex.ru">
+</DynamicComponent>
 ```
 
 ## Publish
