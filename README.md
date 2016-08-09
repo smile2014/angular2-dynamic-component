@@ -21,13 +21,6 @@ npm install angular2-dynamic-component --save
 
 **ButtonsToolbar.ts**
 ```typescript
-import {Component} from '@angular/core';
-
-import {GreenButton} from './GreenButton';
-import {RedButton} from './RedButton';
-import {IButton} from './IButton';
-import {ButtonsToolbarPlaceholder} from './ButtonsToolbarPlaceholder';
-
 export interface ButtonType {
     name:string;
     type:{new ():IButton};
@@ -57,16 +50,6 @@ export class ButtonsToolbar {
 
 **ButtonsToolbarPlaceholder.ts**
 ```typescript
-import {
-    Component,
-    Input,
-    ComponentResolver,
-    ViewContainerRef,
-    ElementRef
-} from '@angular/core';
-
-import {Reflector} from '@angular/core/src/reflection/reflection';
-
 import {DynamicComponentFactory, DynamicComponent} from 'angular2-dynamic-component';
 
 import {IButton} from './IButton';
@@ -84,35 +67,26 @@ export class ButtonsToolbarPlaceholder extends DynamicComponentFactory<IButton> 
 
     @Input() buttonName:string;
     @Input() componentType:{new ():IButton};
+    
+    protected destroyWrapper:boolean;
 
-    constructor(protected element:ElementRef,
-                protected viewContainer:ViewContainerRef,
-                protected componentResolver:ComponentResolver,
-                protected reflector:Reflector) {
-        super(element, viewContainer, componentResolver, reflector);
+    constructor(...) {
+        super(element, viewContainer, componentResolver, reflector, http);
+        
+        this.destroyWrapper = true;  // remove placeholder after,  because the component is not reset, and the data are not changed
     }
 }
 ```
 
 **IButton.ts**
 ```typescript
-import {ButtonType} from './ButtonsToolbar';
-
 export interface IButton {
-
     buttonName:string;
 }
 ```
 
 **GreenButton.ts**
 ```typescript
-import {
-    Component,
-    Input
-} from '@angular/core';
-
-import {IButton} from './IButton';
-
 @Component({
     selector: 'GreenButton',
     template: '<span style="color: green; width: 50px; border: 1px solid black; padding: 6px; margin: 6px;">The first button with name: {{ buttonName }}</span>',
@@ -125,19 +99,11 @@ export class GreenButton implements IButton {
 
 **RedButton.ts**
 ```typescript
-import {
-    Component,
-    Input
-} from '@angular/core';
-
-import {IButton} from './IButton';
-
 @Component({
     selector: 'RedButton',
     template: '<span style="color: red; width: 50px; border: 1px solid black; padding: 6px; margin: 6px;">The second button with name: {{ buttonName }}</span>',
 })
 export class RedButton implements IButton {
-
     @Input() public buttonName:string;
 }
 ```
@@ -145,57 +111,31 @@ export class RedButton implements IButton {
 **Preview**
 ![Preview](demo/preview.png)
 
-## Use case #2 **componentTemplate**
-
-**Template**
-```html
-...
-<td *ngFor="let column of columns">
-    <DynamicComponent [componentTemplate]="column.getColumnTemplate()">
-    </DynamicComponent>
-</td>
-...
-```
-
-**App.ts**
+## Use case #2. Using the "componentTemplate" attribute input
+**app.ts**
 ```typescript
-@Component({
-    ...
-    directives: [DynamicComponentFactory]
-    ...
-})
+import {DynamicComponentFactory} from 'angular2-dynamic-component';
+
+@Component({directives: [DynamicComponentFactory]})
 class App {
-...
+    private componentTemplate:string = '<input type="text" style="color: green; width: 100px;" [(ngModel)]="model" (ngModelChange)="onChange($event)"/>';
 }
 ```
 
-**DynamicColumn.ts**
-```typescript
-export class DynamicColumn extends Column {
-    ...
-    public getColumnTemplate():string {
-        return '<input type="text" style="color: green; width: 100px;" [(ngModel)]="model" (ngModelChange)="onChange($event)"/>';
-    }
-}
-```
-
-## Use case #3 **componentMetaData**
-
-**Template**
+**app.html**
 ```html
-...
-<td *ngFor="let column of columns">
-    <DynamicComponent [componentMetaData]="column.getColumnMetaData()">
-    </DynamicComponent>
-</td>
-...
+<DynamicComponent [componentTemplate]="componentTemplate">
+</DynamicComponent>
 ```
 
-**DynamicColumn.ts**
+## Use case #3. Using the "componentMetaData" attribute input
+**app.ts**
 ```typescript
-export class DynamicColumn extends Column {
-    ...
-    public getColumnMetaData():IComponentMetadata {
+import {DynamicComponentFactory} from 'angular2-dynamic-component';
+
+@Component({directives: [DynamicComponentFactory]})
+class App {
+    public getDynamicMetaData():IComponentMetadata {
         return {
            ...
         };
@@ -203,9 +143,22 @@ export class DynamicColumn extends Column {
 }
 ```
 
-## Use case #4 **componentTemplateUrl**
+**app.html**
+```html
+<DynamicComponent [componentMetaData]="getDynamicMetaData()">
+</DynamicComponent>
+```
 
-**Template**
+## Use case #4. Using the "componentTemplateUrl" attribute input
+**app.ts**
+```typescript
+import {DynamicComponentFactory} from 'angular2-dynamic-component';
+
+@Component({directives: [DynamicComponentFactory]})
+class App {}
+```
+
+**app.html**
 ```html
 <DynamicComponent [componentTemplateUrl]="http://www.yandex.ru">
 </DynamicComponent>
