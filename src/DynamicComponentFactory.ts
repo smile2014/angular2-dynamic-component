@@ -5,15 +5,15 @@ import {
     ComponentResolver,
     ElementRef,
     OnChanges,
-    ViewContainerRef
+    ViewContainerRef,
+    ComponentRef
 } from '@angular/core';
 
 import {
     Type,
     isPresent,
     isBlank,
-    isArray,
-    noop
+    isArray
 } from '@angular/core/src/facade/lang';
 
 import {InputMetadata} from '@angular/core/src/metadata/directives';
@@ -39,6 +39,10 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
     @Input() componentMetaData:IComponentMetadata;
     @Input() componentTemplate:string;
 
+    private componentInstance:ComponentRef<TDynamicComponentType>;
+
+    protected destroyWrapper:boolean = false;
+
     constructor(protected element:ElementRef,
                 protected viewContainer:ViewContainerRef,
                 protected componentResolver:ComponentResolver,
@@ -55,9 +59,11 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
         const componentMetaData:IComponentMetadata = this.componentMetaData;
 
         if (!isBlank(componentMetaData)) {
-            componentType = Component(componentMetaData)(noop);
+            componentType = Component(componentMetaData)(() => {
+            });
         } else if (!isBlank(componentTemplate)) {
-            componentType = Component({template: componentTemplate})(noop);
+            componentType = Component({template: componentTemplate})(() => {
+            });
         } else {
             componentType = this.componentType;
         }
@@ -65,12 +71,19 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
         this.componentResolver.resolveComponent(componentType)
             .then((componentFactory:ComponentFactory<TDynamicComponentType>) => {
 
+                if (this.componentInstance) {
+                    this.componentInstance.destroy();
+                }
+                this.componentInstance = this.viewContainer.createComponent<TDynamicComponentType>(componentFactory);
+
                 this.applyPropertiesToDynamicComponent(
-                    this.viewContainer.createComponent<TDynamicComponentType>(componentFactory).instance
+                    this.componentInstance.instance
                 );
 
                 // Remove wrapper after render the component
-                new BrowserDomAdapter().remove(this.element.nativeElement);
+                if (this.destroyWrapper) {
+                    new BrowserDomAdapter().remove(this.element.nativeElement);
+                }
             });
     }
 
