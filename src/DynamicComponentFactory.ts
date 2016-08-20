@@ -97,26 +97,33 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
                     this.makeComponentClass(this.componentTemplate)
                 );
             } else if (!isBlank(this.componentTemplateUrl)) {
-                this.loadRemoteTemplate(resolve);
+                this.loadRemoteTemplate(this.componentTemplateUrl, resolve);
             } else {
                 resolve(this.componentType);
             }
         });
     }
 
-    private loadRemoteTemplate(resolve:(value:Type) => void) {
+    private loadRemoteTemplate(url:string, resolve:(value:Type) => void) {
         let requestArgs:RequestOptionsArgs = {withCredentials: true};
         if (!isBlank(this.componentRemoteTemplateFactory)) {
             requestArgs = this.componentRemoteTemplateFactory.buildRequestOptions();
         }
 
-        ObservableWrapper.toPromise(this.http.get(this.componentTemplateUrl, requestArgs))
+        ObservableWrapper.toPromise(this.http.get(url, requestArgs))
             .then((response:Response) => {
-                resolve(
-                    this.makeComponentClass(!isBlank(this.componentRemoteTemplateFactory)
-                        ? this.componentRemoteTemplateFactory.parseResponse(response)
-                        : response.text())
-                );
+                if (response.status === 301 || response.status === 302) {
+                    const chainedUrl:string = response.headers.get('Location');
+                    if (!isBlank(chainedUrl)) {
+                        this.loadRemoteTemplate(chainedUrl, resolve);
+                    }
+                } else {
+                    resolve(
+                        this.makeComponentClass(!isBlank(this.componentRemoteTemplateFactory)
+                            ? this.componentRemoteTemplateFactory.parseResponse(response)
+                            : response.text())
+                    );
+                }
             }, (reason:any) => {
                 resolve(reason);
             });

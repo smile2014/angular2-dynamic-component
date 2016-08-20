@@ -160,7 +160,7 @@ class App {}
 
 **app.html**
 ```html
-<DynamicComponent [componentTemplateUrl]="http://www.yandex.ru">
+<DynamicComponent [componentTemplateUrl]="'http://www.yandex.ru'">
 </DynamicComponent>
 ```
 
