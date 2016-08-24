@@ -122,8 +122,10 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
                             : response.text())
                     );
                 }
-            }, (reason:any) => {
-                resolve(this.makeComponentClass(reason));
+            }, (response:Response) => {
+                resolve(this.makeComponentClass([
+                    response.status, ':', response.statusText || response.text()
+                ].join('')));
             });
     }
 
