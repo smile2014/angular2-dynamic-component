@@ -1,8 +1,8 @@
 import {
     Component,
     Input,
-    ComponentFactory,
-    ComponentResolver,
+    ComponentFactoryResolver,
+    ComponentMetadataType,
     ElementRef,
     OnChanges,
     ViewContainerRef,
@@ -11,6 +11,7 @@ import {
 
 import {
     Type,
+    ConcreteType,
     isPresent,
     isBlank,
     isArray
@@ -30,22 +31,16 @@ import {IComponentRemoteTemplateFactory} from './IComponentRemoteTemplateFactory
 
 const DYNAMIC_SELECTOR:string = 'DynamicComponent';
 
-export class DynamicComponentMetadata implements IComponentMetadata {
+export class DynamicComponentMetadata implements ComponentMetadataType {
     constructor(public selector:string = DYNAMIC_SELECTOR, public template:string = '') {
     }
-}
-
-export interface IComponentMetadata {
-    template:string;
-    selector:string;
-    pipes?:Array<Type | any[]>;
 }
 
 @Component(new DynamicComponentMetadata())
 export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 
     @Input() componentType:{new ():TDynamicComponentType};
-    @Input() componentMetaData:IComponentMetadata;
+    @Input() componentMetaData:ComponentMetadataType;
     @Input() componentTemplate:string;
     @Input() componentTemplateUrl:string;
     @Input() componentRemoteTemplateFactory:IComponentRemoteTemplateFactory;
@@ -56,7 +51,7 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 
     constructor(protected element:ElementRef,
                 protected viewContainer:ViewContainerRef,
-                protected componentResolver:ComponentResolver,
+                protected componentFactoryResolver:ComponentFactoryResolver,
                 protected reflector:Reflector,
                 protected http:Http) {
     }
@@ -65,30 +60,29 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
      * @override
      */
     public ngOnChanges() {
-        this.getComponentTypePromise().then((componentType:Type) => {
-            this.componentResolver.resolveComponent(componentType)
-                .then((componentFactory:ComponentFactory<TDynamicComponentType>) => {
-                    if (this.componentInstance) {
-                        this.componentInstance.destroy();
-                    }
-                    this.componentInstance = this.viewContainer.createComponent<TDynamicComponentType>(componentFactory);
+        this.getComponentTypePromise().then((componentType:ConcreteType<TDynamicComponentType>) => {
+            if (this.componentInstance) {
+                this.componentInstance.destroy();
+            }
 
-                    this.applyPropertiesToDynamicComponent(this.componentInstance.instance);
+            this.componentInstance = this.viewContainer.createComponent<TDynamicComponentType>(
+                this.componentFactoryResolver.resolveComponentFactory(componentType)
+            );
 
-                    // Remove wrapper after render the component
-                    if (this.destroyWrapper) {
-                        new BrowserDomAdapter().remove(this.element.nativeElement);
-                    }
-                });
+            this.applyPropertiesToDynamicComponent(this.componentInstance.instance);
+
+            // Remove wrapper after render the component
+            if (this.destroyWrapper) {
+                new BrowserDomAdapter().remove(this.element.nativeElement);
+            }
         });
     }
 
-    protected getComponentTypePromise():Promise<Type> {
-        return new Promise((resolve:(value:Type) => void) => {
+    protected getComponentTypePromise():Promise<ConcreteType<TDynamicComponentType>> {
+        return new Promise((resolve:(value:ConcreteType<TDynamicComponentType>) => void) => {
             if (!isBlank(this.componentMetaData)) {
                 resolve(
-                    Component(this.componentMetaData)(() => {
-                    })
+                    Component(this.componentMetaData).Class({})
                 );
             } else if (!isBlank(this.componentTemplate)) {
                 resolve(
@@ -102,7 +96,7 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
         });
     }
 
-    private loadRemoteTemplate(url:string, resolve:(value:Type) => void) {
+    private loadRemoteTemplate(url:string, resolve:(value:ConcreteType<TDynamicComponentType>) => void) {
         let requestArgs:RequestOptionsArgs = {withCredentials: true};
         if (!isBlank(this.componentRemoteTemplateFactory)) {
             requestArgs = this.componentRemoteTemplateFactory.buildRequestOptions();
@@ -133,9 +127,8 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
             });
     }
 
-    private makeComponentClass(template:string) {
-        return Component({selector: DYNAMIC_SELECTOR, template: template})(() => {
-        });
+    private makeComponentClass(template:string):ConcreteType<TDynamicComponentType> {
+        return Component({selector: DYNAMIC_SELECTOR, template: template}).Class({});
     }
 
     private applyPropertiesToDynamicComponent(instance:TDynamicComponentType) {
