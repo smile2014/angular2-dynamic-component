@@ -30,7 +30,7 @@ import {IComponentRemoteTemplateFactory} from './IComponentRemoteTemplateFactory
 
 const DYNAMIC_SELECTOR:string = 'DynamicComponent';
 
-export class DynamicComponent implements IComponentMetadata {
+export class DynamicComponentMetadata implements IComponentMetadata {
     constructor(public selector:string = DYNAMIC_SELECTOR, public template:string = '') {
     }
 }
@@ -41,8 +41,8 @@ export interface IComponentMetadata {
     pipes?:Array<Type | any[]>;
 }
 
-@Component(new DynamicComponent())
-export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges {
+@Component(new DynamicComponentMetadata())
+export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 
     @Input() componentType:{new ():TDynamicComponentType};
     @Input() componentMetaData:IComponentMetadata;
@@ -123,9 +123,13 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
                     );
                 }
             }, (response:Response) => {
-                resolve(this.makeComponentClass([
-                    response.status, ':', response.statusText || response.text()
-                ].join('')));
+                console.error('[$DynamicComponent] loadRemoteTemplate error response:', response);
+
+                resolve(
+                    this.makeComponentClass([
+                        response.status, ':', response.statusText || response.text()
+                    ].join(''))
+                );
             });
     }
 
@@ -143,7 +147,7 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
                 && this.hasInputMetadataAnnotation(dynamicComponentMetaData[prop])) {
 
                 if (isPresent(instance[prop])) {
-                    console.warn('[$DynamicComponentFactory] The property', prop, 'will be overwritten for the component', instance);
+                    console.warn('[$DynamicComponent] The property', prop, 'will be overwritten for the component', instance);
                 }
                 instance[prop] = this[prop];
             }

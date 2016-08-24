@@ -50,12 +50,12 @@ export class ButtonsToolbar {
 
 **ButtonsToolbarPlaceholder.ts**
 ```typescript
-import {DynamicComponentFactory, DynamicComponent} from 'angular2-dynamic-component';
+import {DynamicComponent, DynamicComponentMetadata} from 'angular2-dynamic-component';
 
 import {IButton} from './IButton';
 import {ButtonType} from './ButtonsToolbar';
 
-class ButtonsToolbarComponent extends DynamicComponent {
+class ButtonsToolbarComponent extends DynamicComponentMetadata {
 
     constructor(public selector:string = 'ButtonsToolbarPlaceholder') {
         super();
@@ -63,7 +63,7 @@ class ButtonsToolbarComponent extends DynamicComponent {
 }
 
 @Component(new ButtonsToolbarComponent())
-export class ButtonsToolbarPlaceholder extends DynamicComponentFactory<IButton> implements IButton {
+export class ButtonsToolbarPlaceholder extends DynamicComponent<IButton> implements IButton {
 
     @Input() buttonName:string;
     @Input() componentType:{new ():IButton};
@@ -114,9 +114,9 @@ export class RedButton implements IButton {
 ## Use case #2. Using the "componentTemplate" attribute input
 **app.ts**
 ```typescript
-import {DynamicComponentFactory} from 'angular2-dynamic-component';
+import {DynamicComponent} from 'angular2-dynamic-component';
 
-@Component({directives: [DynamicComponentFactory]})
+@Component({directives: [DynamicComponent]})
 class App {
     private componentTemplate:string = '<input type="text" style="color: green; width: 100px;" [(ngModel)]="model" (ngModelChange)="onChange($event)"/>';
 }
@@ -131,9 +131,9 @@ class App {
 ## Use case #3. Using the "componentMetaData" attribute input
 **app.ts**
 ```typescript
-import {DynamicComponentFactory} from 'angular2-dynamic-component';
+import {DynamicComponent} from 'angular2-dynamic-component';
 
-@Component({directives: [DynamicComponentFactory]})
+@Component({directives: [DynamicComponent]})
 class App {
     public getDynamicMetaData():IComponentMetadata {
         return {
@@ -152,9 +152,9 @@ class App {
 ## Use case #4. Using the "componentTemplateUrl" attribute input
 **app.ts**
 ```typescript
-import {DynamicComponentFactory} from 'angular2-dynamic-component';
+import {DynamicComponent} from 'angular2-dynamic-component';
 
-@Component({directives: [DynamicComponentFactory]})
+@Component({directives: [DynamicComponent]})
 class App {}
 ```
 
