@@ -22,8 +22,6 @@ import {
     RequestOptionsArgs
 } from '@angular/http';
 
-import {ObservableWrapper} from '@angular/common/src/facade/async';
-
 import {InputMetadata} from '@angular/core/src/metadata/directives';
 import {Reflector} from '@angular/core/src/reflection/reflection';
 
@@ -110,8 +108,8 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
             requestArgs = this.componentRemoteTemplateFactory.buildRequestOptions();
         }
 
-        ObservableWrapper.toPromise(this.http.get(url, requestArgs))
-            .then((response:Response) => {
+        this.http.get(url, requestArgs)
+            .subscribe((response:Response) => {
                 if (response.status === 301 || response.status === 302) {
                     const chainedUrl:string = response.headers.get('Location');
                     if (!isBlank(chainedUrl)) {
@@ -125,7 +123,7 @@ export class DynamicComponentFactory<TDynamicComponentType> implements OnChanges
                     );
                 }
             }, (reason:any) => {
-                resolve(reason);
+                resolve(this.makeComponentClass(reason));
             });
     }
 
