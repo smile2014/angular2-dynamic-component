@@ -14,7 +14,8 @@ import {
     ConcreteType,
     isPresent,
     isBlank,
-    isArray
+    isArray,
+    isString
 } from '@angular/core/src/facade/lang';
 
 import {
@@ -82,7 +83,7 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
         return new Promise((resolve:(value:ConcreteType<TDynamicComponentType>) => void) => {
             if (!isBlank(this.componentMetaData)) {
                 resolve(
-                    Component(this.componentMetaData).Class({})
+                    this.makeComponentClass(this.componentMetaData)
                 );
             } else if (!isBlank(this.componentTemplate)) {
                 resolve(
@@ -127,8 +128,22 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
             });
     }
 
-    private makeComponentClass(template:string):ConcreteType<TDynamicComponentType> {
-        return Component({selector: DYNAMIC_SELECTOR, template: template}).Class({});
+    private makeComponentClass(template:string|ComponentMetadataType):ConcreteType<TDynamicComponentType> {
+        if (isString(template)) {
+            @Component({selector: DYNAMIC_SELECTOR, template: template})
+            class stub {
+                constructor() {
+                }
+            }
+            return stub as ConcreteType<TDynamicComponentType>;
+        } else {
+            @Component(template)
+            class stub {
+                constructor() {
+                }
+            }
+            return stub as ConcreteType<TDynamicComponentType>;
+        }
     }
 
     private applyPropertiesToDynamicComponent(instance:TDynamicComponentType) {
