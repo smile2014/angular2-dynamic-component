@@ -111,7 +111,7 @@ export class RedButton implements IButton {
 **Preview**
 ![Preview](demo/preview.png)
 
-## Use case #2. Using the "componentTemplate" attribute input
+## Use case #2. Using the "componentTemplate" attribute
 **app.ts**
 ```typescript
 import {DynamicComponent} from 'angular2-dynamic-component';
@@ -128,7 +128,7 @@ class App {
 </DynamicComponent>
 ```
 
-## Use case #3. Using the "componentMetaData" attribute input
+## Use case #3. Using the "componentMetaData" attribute
 **app.ts**
 ```typescript
 import {DynamicComponent} from 'angular2-dynamic-component';
@@ -149,7 +149,10 @@ class App {
 </DynamicComponent>
 ```
 
-## Use case #4. Using the "componentTemplateUrl" attribute input
+## Use case #4. Using the "componentTemplateUrl" attribute
+
+The main feature is the support of [http 301](https://en.wikipedia.org/wiki/HTTP_301) and [http 302](https://en.wikipedia.org/wiki/HTTP_302) statuses.
+
 **app.ts**
 ```typescript
 import {DynamicComponent} from 'angular2-dynamic-component';
