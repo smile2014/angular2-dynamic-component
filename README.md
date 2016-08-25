@@ -1,6 +1,6 @@
 # angular2-dynamic-component
 
-The implementation of dynamic component wrapper at Angular2.
+The implementation of dynamic component wrapper at Angular2 (RC5 compatible).
 
 ## Installation
 
@@ -71,7 +71,7 @@ export class ButtonsToolbarPlaceholder extends DynamicComponent<IButton> impleme
     protected destroyWrapper:boolean;
 
     constructor(...) {
-        super(element, viewContainer, componentResolver, reflector, http);
+        super(element, viewContainer, compiler, reflector, http);
         
         this.destroyWrapper = true;  // remove placeholder after,  because the component is not reset, and the data are not changed
     }
@@ -116,7 +116,13 @@ export class RedButton implements IButton {
 ```typescript
 import {DynamicComponent} from 'angular2-dynamic-component';
 
-@Component({directives: [DynamicComponent]})
+@NgModule({
+    entryComponents: [DynamicComponent],        // Angular2 RC5 compatible
+    ...
+})
+...
+
+@Component(...)
 class App {
     private componentTemplate:string = '<input type="text" style="color: green; width: 100px;" [(ngModel)]="model" (ngModelChange)="onChange($event)"/>';
 }
@@ -133,7 +139,13 @@ class App {
 ```typescript
 import {DynamicComponent} from 'angular2-dynamic-component';
 
-@Component({directives: [DynamicComponent]})
+@NgModule({
+    entryComponents: [DynamicComponent],        // Angular2 RC5 compatible
+    ...
+})
+...
+
+@Component(...)
 class App {
     public getDynamicMetaData():IComponentMetadata {
         return {
@@ -157,8 +169,10 @@ The main feature is the support of [http 301](https://en.wikipedia.org/wiki/HTTP
 ```typescript
 import {DynamicComponent} from 'angular2-dynamic-component';
 
-@Component({directives: [DynamicComponent]})
-class App {}
+@NgModule({
+    entryComponents: [DynamicComponent],        // Angular2 RC5 compatible
+    ...
+})
 ```
 
 **app.html**
