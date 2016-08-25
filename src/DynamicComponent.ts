@@ -123,9 +123,7 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
                 console.error('[$DynamicComponent] loadRemoteTemplate error response:', response);
 
                 resolve(
-                    this.makeComponentClass([
-                        response.status, ':', response.statusText || response.text()
-                    ].join(''))
+                    this.makeComponentClass(['[ERROR]:', response.status].join(''))
                 );
             });
     }
