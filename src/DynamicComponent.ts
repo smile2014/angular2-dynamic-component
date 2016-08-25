@@ -1,12 +1,13 @@
 import {
     Component,
     Input,
-    ComponentFactoryResolver,
+    Compiler,
     ComponentMetadataType,
     ElementRef,
     OnChanges,
     ViewContainerRef,
-    ComponentRef
+    ComponentRef,
+    ComponentFactory
 } from '@angular/core';
 
 import {
@@ -52,7 +53,7 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 
     constructor(protected element:ElementRef,
                 protected viewContainer:ViewContainerRef,
-                protected componentFactoryResolver:ComponentFactoryResolver,
+                protected compiler: Compiler,
                 protected reflector:Reflector,
                 protected http:Http) {
     }
@@ -62,20 +63,21 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
      */
     public ngOnChanges() {
         this.getComponentTypePromise().then((componentType:ConcreteType<TDynamicComponentType>) => {
-            if (this.componentInstance) {
-                this.componentInstance.destroy();
-            }
+            this.compiler.compileComponentAsync<TDynamicComponentType>(componentType)
+                .then((dynamicComponentFactory:ComponentFactory<TDynamicComponentType>) => {
 
-            this.componentInstance = this.viewContainer.createComponent<TDynamicComponentType>(
-                this.componentFactoryResolver.resolveComponentFactory(componentType)
-            );
+                    if (this.componentInstance) {
+                        this.componentInstance.destroy();
+                    }
+                    this.componentInstance = this.viewContainer.createComponent<TDynamicComponentType>(dynamicComponentFactory);
 
-            this.applyPropertiesToDynamicComponent(this.componentInstance.instance);
+                    this.applyPropertiesToDynamicComponent(this.componentInstance.instance);
 
-            // Remove wrapper after render the component
-            if (this.destroyWrapper) {
-                new BrowserDomAdapter().remove(this.element.nativeElement);
-            }
+                    // Remove wrapper after render the component
+                    if (this.destroyWrapper) {
+                        new BrowserDomAdapter().remove(this.element.nativeElement);
+                    }
+            });
         });
     }
 
