@@ -1,28 +1,29 @@
 import {
-    Component,
-    Input,
-    Compiler,
-    ComponentMetadataType,
-    ElementRef,
-    OnChanges,
-    ViewContainerRef,
-    ComponentRef,
-    ComponentFactory
+	Component,
+	Input,
+	Compiler,
+	ComponentMetadataType,
+	ElementRef,
+	OnChanges,
+	NgModule,
+	ViewContainerRef,
+	ComponentRef,
+	ModuleWithComponentFactories
 } from '@angular/core';
 
 import {
-    Type,
-    ConcreteType,
-    isPresent,
-    isBlank,
-    isArray,
-    isString
+	isPresent,
+	isBlank,
+	isArray,
+	isString
 } from '@angular/core/src/facade/lang';
 
+import {Type} from '@angular/core/src/type';
+
 import {
-    Http,
-    Response,
-    RequestOptionsArgs
+	Http,
+	Response,
+	RequestOptionsArgs
 } from '@angular/http';
 
 import {InputMetadata} from '@angular/core/src/metadata/directives';
@@ -31,138 +32,159 @@ import {Reflector} from '@angular/core/src/reflection/reflection';
 import {BrowserDomAdapter}  from '@angular/platform-browser/src/browser/browser_adapter';
 import {IComponentRemoteTemplateFactory} from './IComponentRemoteTemplateFactory';
 
-const DYNAMIC_SELECTOR:string = 'DynamicComponent';
+const DYNAMIC_SELECTOR: string = 'DynamicComponent';
 
 export class DynamicComponentMetadata implements ComponentMetadataType {
-    constructor(public selector:string = DYNAMIC_SELECTOR, public template:string = '') {
-    }
+	constructor(public selector: string = DYNAMIC_SELECTOR, public template: string = '') {
+	}
+}
+
+interface IComponentAndModuleHolder<TDynamicComponentType> {
+	module: Type<any>;
+	component: Type<TDynamicComponentType>;
 }
 
 @Component(new DynamicComponentMetadata())
 export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 
-    @Input() componentType:{new ():TDynamicComponentType};
-    @Input() componentMetaData:ComponentMetadataType;
-    @Input() componentTemplate:string;
-    @Input() componentTemplateUrl:string;
-    @Input() componentRemoteTemplateFactory:IComponentRemoteTemplateFactory;
+	@Input() componentType: {new (): TDynamicComponentType};
+	@Input() componentMetaData: ComponentMetadataType;
+	@Input() componentTemplate: string;
+	@Input() componentTemplateUrl: string;
+	@Input() componentRemoteTemplateFactory: IComponentRemoteTemplateFactory;
 
-    private componentInstance:ComponentRef<TDynamicComponentType>;
+	private componentInstance: ComponentRef<TDynamicComponentType>;
 
-    protected destroyWrapper:boolean = false;
+	protected destroyWrapper: boolean = false;
 
-    constructor(protected element:ElementRef,
-                protected viewContainer:ViewContainerRef,
-                protected compiler: Compiler,
-                protected reflector:Reflector,
-                protected http:Http) {
-    }
+	constructor(protected element: ElementRef,
+	            protected viewContainer: ViewContainerRef,
+	            protected compiler: Compiler,
+	            protected reflector: Reflector,
+	            protected http: Http) {
+	}
 
-    /**
-     * @override
-     */
-    public ngOnChanges() {
-        this.getComponentTypePromise().then((componentType:ConcreteType<TDynamicComponentType>) => {
-            this.compiler.compileComponentAsync<TDynamicComponentType>(componentType)
-                .then((dynamicComponentFactory:ComponentFactory<TDynamicComponentType>) => {
+	/**
+	 * @override
+	 */
+	public ngOnChanges() {
+		this.getComponentTypePromise().then((componentAndModuleHolder: IComponentAndModuleHolder<TDynamicComponentType>) => {
 
-                    if (this.componentInstance) {
-                        this.componentInstance.destroy();
-                    }
-                    this.componentInstance = this.viewContainer.createComponent<TDynamicComponentType>(dynamicComponentFactory);
+			this.compiler.compileModuleAndAllComponentsAsync<any>(componentAndModuleHolder.module)
+				.then((moduleWithComponentFactories: ModuleWithComponentFactories<any>) => {
+					if (this.componentInstance) {
+						this.componentInstance.destroy();
+					}
+					this.componentInstance = this.viewContainer.createComponent<TDynamicComponentType>(
+						moduleWithComponentFactories.componentFactories[0]
+					);
 
-                    this.applyPropertiesToDynamicComponent(this.componentInstance.instance);
+					this.applyPropertiesToDynamicComponent(this.componentInstance.instance);
 
-                    // Remove wrapper after render the component
-                    if (this.destroyWrapper) {
-                        new BrowserDomAdapter().remove(this.element.nativeElement);
-                    }
-            });
-        });
-    }
+					// Remove wrapper after render the component
+					if (this.destroyWrapper) {
+						new BrowserDomAdapter().remove(this.element.nativeElement);
+					}
+				});
+		});
+	}
 
-    protected getComponentTypePromise():Promise<ConcreteType<TDynamicComponentType>> {
-        return new Promise((resolve:(value:ConcreteType<TDynamicComponentType>) => void) => {
-            if (!isBlank(this.componentMetaData)) {
-                resolve(
-                    this.makeComponentClass(this.componentMetaData)
-                );
-            } else if (!isBlank(this.componentTemplate)) {
-                resolve(
-                    this.makeComponentClass(this.componentTemplate)
-                );
-            } else if (!isBlank(this.componentTemplateUrl)) {
-                this.loadRemoteTemplate(this.componentTemplateUrl, resolve);
-            } else {
-                resolve(this.componentType);
-            }
-        });
-    }
+	protected getComponentTypePromise(): Promise<IComponentAndModuleHolder<TDynamicComponentType>> {
+		return new Promise((resolve: (value: IComponentAndModuleHolder<TDynamicComponentType>) => void) => {
+			if (!isBlank(this.componentMetaData)) {
+				resolve(
+					this.makeComponentModule(this.componentMetaData)
+				);
+			} else if (!isBlank(this.componentTemplate)) {
+				resolve(
+					this.makeComponentModule(this.componentTemplate)
+				);
+			} else if (!isBlank(this.componentTemplateUrl)) {
+				this.loadRemoteTemplate(this.componentTemplateUrl, resolve);
+			} else {
+				resolve(this.makeComponentModule(null, this.componentType));
+			}
+		});
+	}
 
-    private loadRemoteTemplate(url:string, resolve:(value:ConcreteType<TDynamicComponentType>) => void) {
-        let requestArgs:RequestOptionsArgs = {withCredentials: true};
-        if (!isBlank(this.componentRemoteTemplateFactory)) {
-            requestArgs = this.componentRemoteTemplateFactory.buildRequestOptions();
-        }
+	private loadRemoteTemplate(url: string, resolve: (value: IComponentAndModuleHolder<TDynamicComponentType>) => void) {
+		let requestArgs: RequestOptionsArgs = {withCredentials: true};
+		if (!isBlank(this.componentRemoteTemplateFactory)) {
+			requestArgs = this.componentRemoteTemplateFactory.buildRequestOptions();
+		}
 
-        this.http.get(url, requestArgs)
-            .subscribe((response:Response) => {
-                if (response.status === 301 || response.status === 302) {
-                    const chainedUrl:string = response.headers.get('Location');
-                    if (!isBlank(chainedUrl)) {
-                        this.loadRemoteTemplate(chainedUrl, resolve);
-                    }
-                } else {
-                    resolve(
-                        this.makeComponentClass(!isBlank(this.componentRemoteTemplateFactory)
-                            ? this.componentRemoteTemplateFactory.parseResponse(response)
-                            : response.text())
-                    );
-                }
-            }, (response:Response) => {
-                console.error('[$DynamicComponent] loadRemoteTemplate error response:', response);
+		this.http.get(url, requestArgs)
+			.subscribe((response: Response) => {
+				if (response.status === 301 || response.status === 302) {
+					const chainedUrl: string = response.headers.get('Location');
+					if (!isBlank(chainedUrl)) {
+						this.loadRemoteTemplate(chainedUrl, resolve);
+					}
+				} else {
+					resolve(
+						this.makeComponentModule(!isBlank(this.componentRemoteTemplateFactory)
+							? this.componentRemoteTemplateFactory.parseResponse(response)
+							: response.text())
+					);
+				}
+			}, (response: Response) => {
+				console.error('[$DynamicComponent] loadRemoteTemplate error response:', response);
 
-                resolve(
-                    this.makeComponentClass(['[ERROR]:', response.status].join(''))
-                );
-            });
-    }
+				resolve(
+					this.makeComponentModule(['[ERROR]:', response.status].join(''))
+				);
+			});
+	}
 
-    private makeComponentClass(template:string|ComponentMetadataType):ConcreteType<TDynamicComponentType> {
-        if (isString(template)) {
-            @Component({selector: DYNAMIC_SELECTOR, template: template})
-            class stub {
-                constructor() {
-                }
-            }
-            return stub as ConcreteType<TDynamicComponentType>;
-        } else {
-            @Component(template)
-            class stub {
-                constructor() {
-                }
-            }
-            return stub as ConcreteType<TDynamicComponentType>;
-        }
-    }
+	private makeComponentModule(template: string|ComponentMetadataType, componentType?: {new (): TDynamicComponentType}): IComponentAndModuleHolder<TDynamicComponentType> {
+		const component: Type<TDynamicComponentType> = componentType || this.makeComponent(template);
 
-    private applyPropertiesToDynamicComponent(instance:TDynamicComponentType) {
-        const placeholderComponentMetaData:{[key:string]:Type[];} = this.reflector.propMetadata(this.constructor),
-            dynamicComponentMetaData:{[key:string]:Type[];} = this.reflector.propMetadata(instance.constructor);
+		@NgModule({
+			declarations: [component]
+		})
+		class stubModule {
+		}
+		return {
+			module: stubModule,
+			component: component
+		};
+	}
 
-        for (let prop of Object.keys(this)) {
-            if (this.hasInputMetadataAnnotation(placeholderComponentMetaData[prop])
-                && this.hasInputMetadataAnnotation(dynamicComponentMetaData[prop])) {
+	private makeComponent(template: string|ComponentMetadataType): Type<TDynamicComponentType> {
+		if (isString(template)) {
+			@Component({selector: DYNAMIC_SELECTOR, template: template})
+			class stub {
+				constructor() {
+				}
+			}
+			return stub as Type<TDynamicComponentType>;
+		} else {
+			@Component(template)
+			class stub {
+				constructor() {
+				}
+			}
+			return stub as Type<TDynamicComponentType>;
+		}
+	}
 
-                if (isPresent(instance[prop])) {
-                    console.warn('[$DynamicComponent] The property', prop, 'will be overwritten for the component', instance);
-                }
-                instance[prop] = this[prop];
-            }
-        }
-    }
+	private applyPropertiesToDynamicComponent(instance: TDynamicComponentType) {
+		const placeholderComponentMetaData: {[key: string]: Type<any>[];} = this.reflector.propMetadata(this.constructor as Type<any>),
+			dynamicComponentMetaData: {[key: string]: Type<any>[];} = this.reflector.propMetadata(instance.constructor as Type<any>);
 
-    private hasInputMetadataAnnotation(metaDataByProperty:Array<Type>):boolean {
-        return isArray(metaDataByProperty) && !!metaDataByProperty.find((decorator:Type) => decorator instanceof InputMetadata);
-    }
+		for (let prop of Object.keys(this)) {
+			if (this.hasInputMetadataAnnotation(placeholderComponentMetaData[prop])
+				&& this.hasInputMetadataAnnotation(dynamicComponentMetaData[prop])) {
+
+				if (isPresent(instance[prop])) {
+					console.warn('[$DynamicComponent] The property', prop, 'will be overwritten for the component', instance);
+				}
+				instance[prop] = this[prop];
+			}
+		}
+	}
+
+	private hasInputMetadataAnnotation(metaDataByProperty: Array<Type<any>>): boolean {
+		return isArray(metaDataByProperty) && !!metaDataByProperty.find((decorator: Type<any>) => decorator instanceof InputMetadata);
+	}
 }
