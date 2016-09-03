@@ -117,7 +117,7 @@ export class RedButton implements IButton {
 import {DynamicComponent} from 'angular2-dynamic-component';
 
 @NgModule({
-    entryComponents: [DynamicComponent],        // Angular2 RC5 compatible
+    declarations: [DynamicComponent],
     ...
 })
 ...
@@ -140,7 +140,7 @@ class App {
 import {DynamicComponent} from 'angular2-dynamic-component';
 
 @NgModule({
-    entryComponents: [DynamicComponent],        // Angular2 RC5 compatible
+    declarations: [DynamicComponent],
     ...
 })
 ...
@@ -170,7 +170,7 @@ The main feature is the support of [http 301](https://en.wikipedia.org/wiki/HTTP
 import {DynamicComponent} from 'angular2-dynamic-component';
 
 @NgModule({
-    entryComponents: [DynamicComponent],        // Angular2 RC5 compatible
+    declarations: [DynamicComponent],
     ...
 })
 ```
