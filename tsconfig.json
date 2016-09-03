@@ -8,7 +8,7 @@
     "sourceMap": true,
     "declaration": true,
     "rootDir": "src",
-    "outDir": "."
+    "outDir": ""
   },
   "compileOnSave": false,
   "buildOnSave": false,
