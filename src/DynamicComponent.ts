@@ -39,11 +39,6 @@ export class DynamicComponentMetadata implements ComponentMetadataType {
 	}
 }
 
-interface IComponentAndModuleHolder<TDynamicComponentType> {
-	module: Type<any>;
-	component: Type<TDynamicComponentType>;
-}
-
 @Component(new DynamicComponentMetadata())
 export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 
@@ -68,14 +63,15 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 	 * @override
 	 */
 	public ngOnChanges() {
-		this.getComponentTypePromise().then((componentAndModuleHolder: IComponentAndModuleHolder<TDynamicComponentType>) => {
+		this.getComponentTypePromise().then((module: Type<any>) => {
 
-			this.compiler.compileModuleAndAllComponentsAsync<any>(componentAndModuleHolder.module)
+			this.compiler.compileModuleAndAllComponentsAsync<any>(module)
 				.then((moduleWithComponentFactories: ModuleWithComponentFactories<any>) => {
 					if (this.componentInstance) {
 						this.componentInstance.destroy();
 					}
 					this.componentInstance = this.viewContainer.createComponent<TDynamicComponentType>(
+						// dynamicComponentClass factory is presented here
 						moduleWithComponentFactories.componentFactories[0]
 					);
 
@@ -89,8 +85,8 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 		});
 	}
 
-	protected getComponentTypePromise(): Promise<IComponentAndModuleHolder<TDynamicComponentType>> {
-		return new Promise((resolve: (value: IComponentAndModuleHolder<TDynamicComponentType>) => void) => {
+	protected getComponentTypePromise(): Promise<Type<any>> {
+		return new Promise((resolve: (value: Type<any>) => void) => {
 			if (!isBlank(this.componentMetaData)) {
 				resolve(
 					this.makeComponentModule(this.componentMetaData)
@@ -107,7 +103,7 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 		});
 	}
 
-	private loadRemoteTemplate(url: string, resolve: (value: IComponentAndModuleHolder<TDynamicComponentType>) => void) {
+	private loadRemoteTemplate(url: string, resolve: (value: Type<any>) => void) {
 		let requestArgs: RequestOptionsArgs = {withCredentials: true};
 		if (!isBlank(this.componentRemoteTemplateFactory)) {
 			requestArgs = this.componentRemoteTemplateFactory.buildRequestOptions();
@@ -136,28 +132,23 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 			});
 	}
 
-	private makeComponentModule(template: string|ComponentMetadataType, componentType?: {new (): TDynamicComponentType}): IComponentAndModuleHolder<TDynamicComponentType> {
-		const component: Type<TDynamicComponentType> = componentType || this.makeComponent(template);
-
+	private makeComponentModule(template: string|ComponentMetadataType, componentType?: {new (): TDynamicComponentType}): Type<any> {
 		@NgModule({
-			declarations: [component]
+			declarations: [componentType || this.makeComponent(template)]
 		})
-		class stubModule {
+		class dynamicComponentModule {
 		}
-		return {
-			module: stubModule,
-			component: component
-		};
+		return dynamicComponentModule;
 	}
 
 	private makeComponent(template: string|ComponentMetadataType): Type<TDynamicComponentType> {
 		if (isString(template)) {
 			@Component({selector: DYNAMIC_SELECTOR, template: template})
-			class stub {
+			class dynamicComponentClass {
 				constructor() {
 				}
 			}
-			return stub as Type<TDynamicComponentType>;
+			return dynamicComponentClass as Type<TDynamicComponentType>;
 		} else {
 			@Component(template)
 			class stub {
