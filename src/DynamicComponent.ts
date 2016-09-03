@@ -133,8 +133,9 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 	}
 
 	private makeComponentModule(template: string|ComponentMetadataType, componentType?: {new (): TDynamicComponentType}): Type<any> {
+		componentType = componentType || this.makeComponent(template);
 		@NgModule({
-			declarations: [componentType || this.makeComponent(template)]
+			declarations: [componentType]
 		})
 		class dynamicComponentModule {
 		}
@@ -151,11 +152,11 @@ export class DynamicComponent<TDynamicComponentType> implements OnChanges {
 			return dynamicComponentClass as Type<TDynamicComponentType>;
 		} else {
 			@Component(template)
-			class stub {
+			class dynamicComponentClass {
 				constructor() {
 				}
 			}
-			return stub as Type<TDynamicComponentType>;
+			return dynamicComponentClass as Type<TDynamicComponentType>;
 		}
 	}
 
